@@ -1,0 +1,67 @@
+{
+  "id": "redencion-01",
+  "titulo": "E01 · La Historia de la Redención — Cap. 1 (prueba)",
+  "nota": "Episodio de PRUEBA para probar la app. Cuando me mandes el guion real, lo reemplazo.",
+  "voz": {
+    "tipo": "System",
+    "idioma": "Spanish|Español",
+    "nombre": "Andrés Delgado|Andres Delgado"
+  },
+  "fichas": {
+    "ESTILO": "Cinematic biblical epic, photorealistic, ultra-detailed, volumetric god rays, soft heavenly haze, warm gold and white palette, anamorphic lens, subtle film grain, landscape 16:9. No text, no watermark, no subtitles. Nobody looks into the camera.",
+    "PADRE": "THE FATHER: majestic ancient figure seated on a throne of living light, long flowing white hair and full white beard, serene radiant face, eyes full of kindness and authority, robes of brilliant white with soft golden glow, surrounded by intense glory. Matches the PADRE reference image.",
+    "CRISTO": "THE SON: man in his early thirties, Middle-Eastern features, shoulder-length dark brown hair, short dark beard, gentle yet authoritative expression, white robe with royal purple sash, soft golden light around him. Matches the CRISTO reference image.",
+    "ANGELES": "ANGELS: tall, strong, MASCULINE adult male angels with noble faces, shoulder-length golden or light-brown hair, robes of white light with gold trim, ENORMOUS majestic feathered wings larger than their own height, detailed white-and-gold feathers. NOT female, NOT small wings, NOT elf-like, NOT costumes or theater look.",
+    "LUCIFER": "LUCIFER (covering cherub, before his fall): the tallest and most beautiful angel, masculine, radiant face, long golden hair, robe of white and gold with jeweled breastplate, immense luminous wings, a faint shadow of pride in his eyes.",
+    "CIELO": "SETTING: the heavenly city — towering walls of light, golden avenues, crystal sea reflecting the glory, endless sky of white and gold clouds."
+  },
+  "escenas": [
+    {
+      "n": 1,
+      "titulo": "El cielo antes de la creación",
+      "descripcion": "Plano de apertura: vista aérea de la ciudad celestial, la cámara desciende hacia el trono lleno de luz.",
+      "referencias": [],
+      "camara": "Vista aérea que desciende lentamente (crane down) hacia el trono",
+      "prompt_imagen": "SCENE E01-01. Wide aerial establishing shot of heaven. {{CIELO}} In the far distance, a throne radiating overwhelming light. {{ESTILO}}",
+      "prompt_video": "SCENE E01-01. Duration 6 seconds, landscape 16:9. SILENT. Slow cinematic crane-down aerial shot descending through golden clouds over the heavenly city toward a distant throne of light. Gentle light rays sweep across the crystal sea. No characters visible close up. {{ESTILO}}",
+      "narracion": "Antes de que el mundo existiera, antes de que los ángeles fueran creados, había gloria en el cielo."
+    },
+    {
+      "n": 2,
+      "titulo": "El Padre y el Hijo",
+      "descripcion": "El Padre y el Hijo juntos en el trono. Unidad perfecta. Solo ellos dos en la toma.",
+      "referencias": [
+        "PADRE",
+        "CRISTO"
+      ],
+      "camara": "Órbita lenta de 180° alrededor del trono",
+      "prompt_imagen": "SCENE E01-02. {{PADRE}} {{CRISTO}} The Son stands at the right side of the Father's throne, both in perfect harmony, looking at each other with deep love. Only these two characters. {{CIELO}} {{ESTILO}}",
+      "prompt_video": "SCENE E01-02. Duration 6 seconds, landscape 16:9. SILENT. Slow 180-degree orbit around the throne. {{PADRE}} {{CRISTO}} They look at each other, calm and united; the Father gently places his hand on the Son's shoulder. Only these two characters, no angels. {{ESTILO}}",
+      "narracion": "El Hijo de Dios era uno con el Padre desde la eternidad, en propósito, en amor y en gloria."
+    },
+    {
+      "n": 3,
+      "titulo": "Los ángeles se inclinan",
+      "descripcion": "Huestes de ángeles se acercan y se inclinan. Vista desde detrás del trono, sin mostrar los rostros del Padre ni del Hijo.",
+      "referencias": [
+        "ANGEL"
+      ],
+      "camara": "Toma baja desde detrás del trono, la cámara avanza despacio (dolly in)",
+      "prompt_imagen": "SCENE E01-03. Low-angle view from behind the glowing throne (only bright light visible in the foreground, no faces). A vast host of angels approaches and kneels in reverence. {{ANGELES}} {{CIELO}} {{ESTILO}}",
+      "prompt_video": "SCENE E01-03. Duration 6 seconds, landscape 16:9. SILENT. Slow dolly-in from behind the throne. Rows of angels walk forward, fold their enormous wings and bow down in worship, feathers catching the golden light. {{ANGELES}} {{ESTILO}}",
+      "narracion": "Miles de ángeles se acercaban con reverencia, y su mayor gozo era adorar al Padre y al Hijo."
+    },
+    {
+      "n": 4,
+      "titulo": "Lucifer",
+      "descripcion": "Primer plano de Lucifer entre los ángeles. Aparece una sombra de orgullo.",
+      "referencias": [
+        "LUCIFER"
+      ],
+      "camara": "Primer plano con acercamiento lento (push-in) al rostro",
+      "prompt_imagen": "SCENE E01-04. Medium close-up. {{LUCIFER}} He stands slightly apart from the kneeling angels, not fully bowing, his gaze raised toward the throne. {{CIELO}} {{ESTILO}}",
+      "prompt_video": "SCENE E01-04. Duration 6 seconds, landscape 16:9. SILENT. Slow push-in on Lucifer's face. {{LUCIFER}} Around him the other angels bow, but he remains half-standing; the light on his face dims slightly as a shadow of pride appears. {{ESTILO}}",
+      "narracion": "Pero entre ellos había uno, el más exaltado de todos los ángeles, Lucifer, el querubín cubridor. Poco a poco comenzó a desear para sí la honra que solo pertenecía al Hijo."
+    }
+  ]
+}

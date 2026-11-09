@@ -1,0 +1,42 @@
+plugins {
+    id 'com.android.application'
+}
+
+def runNumber = (System.getenv("GITHUB_RUN_NUMBER") ?: "1").toInteger()
+
+android {
+    namespace 'com.seventhday.panelve'
+    compileSdk 34
+
+    defaultConfig {
+        applicationId 'com.seventhday.panelve'
+        minSdk 24
+        targetSdk 34
+        versionCode runNumber
+        versionName "1." + runNumber
+    }
+
+    signingConfigs {
+        fixed {
+            storeFile file('panel.keystore')
+            storePassword 'panelve123'
+            keyAlias 'panel'
+            keyPassword 'panelve123'
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            signingConfig signingConfigs.fixed
+        }
+        debug {
+            signingConfig signingConfigs.fixed
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}

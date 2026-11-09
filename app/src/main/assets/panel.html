@@ -1,0 +1,393 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<style>
+:root{--bg:#14161c;--card:#1f232c;--tx:#e8eaf0;--mu:#9aa3b2;--ac:#7c5cff;--ok:#22c55e;--wa:#f59e0b}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:13px/1.35 system-ui,sans-serif;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+button{background:#2a2f3a;color:var(--tx);border:0;border-radius:8px;padding:9px 6px;font:inherit;font-weight:600}
+button:active{filter:brightness(1.5)}
+select,input[type=text]{width:100%;background:#2a2f3a;color:var(--tx);border:0;border-radius:8px;padding:8px;font:inherit}
+#top{position:sticky;top:0;background:var(--bg);padding:6px;display:flex;gap:4px;align-items:center;z-index:5;border-bottom:1px solid #2a2f3a}
+#top select{flex:1;min-width:0}
+.ib{min-width:34px;padding:8px 4px}
+.scene{background:var(--card);border-radius:10px;margin:6px;overflow:hidden;border:2px solid transparent}
+.scene.open{border-color:var(--ac)}
+.sh{padding:8px;display:flex;gap:6px;align-items:center}
+.sh .t{flex:1;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.num{background:#2a2f3a;border-radius:6px;min-width:28px;text-align:center;padding:2px 4px;font-weight:700}
+.done .num{background:var(--ok);color:#000}
+.done .t{color:var(--mu)}
+.sb{padding:0 8px 8px;display:none}
+.open .sb{display:block}
+.lab{color:var(--mu);font-size:11px;margin:10px 0 3px;text-transform:uppercase;letter-spacing:.04em}
+.pv{color:var(--mu);font-size:12px;max-height:3.9em;overflow:hidden;-webkit-user-select:text;user-select:text;margin-top:3px}
+.pv.full{max-height:none;color:var(--tx)}
+.desc{font-size:12.5px}
+.refs{color:#fbbf24;font-size:12.5px;font-weight:600}
+.cam{color:#67e8f9;font-size:12px}
+.row{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px}
+.row button{flex:1 1 auto}
+.w{width:100%;margin-top:4px}
+.img{background:var(--ac)}
+.vid{background:#0e7490}
+.voz{background:#92400e;font-size:12px}
+.chunk{background:#3f3f46;text-align:left;width:100%;margin-top:4px;font-weight:500}
+.chunk b{color:#fbbf24}
+.chunk small{display:block;color:var(--mu);font-weight:400;margin-top:2px}
+.voice{background:#191c23;border-radius:8px;padding:6px;margin-top:6px}
+.voice .who{font-weight:700;color:#fdba74}
+#toast{position:fixed;left:6px;right:6px;bottom:6px;padding:9px;border-radius:8px;background:#000d;display:none;z-index:9;text-align:center;font-weight:600}
+#toast.warn{background:#92400ef0}
+#toast.ok{background:#166534f0}
+#mini{display:none;flex-direction:column;gap:6px;padding:6px 4px}
+#mini button{padding:12px 0;font-size:16px}
+#mini .n{text-align:center;font-weight:800;font-size:15px;padding:4px 0}
+body.col #main{display:none}
+body.col #mini{display:flex}
+#cfg{display:none;padding:8px}
+body.cfg #cfg{display:block}
+body.cfg #list{display:none}
+#cfg .lab{margin-top:12px}
+.empty{padding:14px;color:var(--mu);text-align:center}
+</style>
+</head>
+<body>
+
+<div id="mini">
+  <button onclick="collapse(false)">⟩</button>
+  <div class="n" id="miniN">–</div>
+  <button class="img" onclick="quick('img')">🖼</button>
+  <button class="vid" onclick="quick('vid')">🎬</button>
+  <button onclick="undo()">↶</button>
+  <button onclick="nextScene()">▶</button>
+</div>
+
+<div id="main">
+  <div id="top">
+    <button class="ib" onclick="collapse(true)" title="Encoger">⟨</button>
+    <select id="ep" onchange="selectEp(this.value)"></select>
+    <button class="ib" onclick="refresh()" title="Actualizar">↻</button>
+    <button class="ib" onclick="toggleCfg()" title="Ajustes">⚙</button>
+  </div>
+  <div id="list"></div>
+  <div id="cfg">
+    <div class="lab">Página de VideoExpress</div>
+    <input type="text" id="cVe">
+    <div class="row"><button onclick="openVe()">Abrir</button><button onclick="Android.reloadVe()">Recargar</button></div>
+    <div class="lab">Ancho del panel</div>
+    <select id="cW"><option value="2">2 décimas</option><option value="3">3 décimas</option><option value="4">4 décimas</option><option value="5">5 décimas</option></select>
+    <div class="lab">Vista de VideoExpress</div>
+    <select id="cD"><option value="1">Modo escritorio (como en la PC)</option><option value="0">Modo móvil</option></select>
+    <div class="lab">Dirección de los episodios</div>
+    <input type="text" id="cIdx">
+    <div class="lab">Importar episodio desde archivo</div>
+    <input type="file" id="cFile" onchange="importFile(this)">
+    <div class="row" style="margin-top:12px"><button class="img" onclick="saveCfg()">Guardar</button><button onclick="toggleCfg()">Cerrar</button></div>
+    <div class="row"><button onclick="resetDone()">Desmarcar escenas del episodio</button></div>
+    <div class="lab">Versión</div><div class="desc">Panel VE · Seventh Day Music</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+var DEF = {
+  indexUrl: 'https://raw.githubusercontent.com/fedlpz07-cpu/panel-videoexpress/main/episodios/index.json',
+  veUrl: 'https://app.videoexpress.ai',
+  width: '2',
+  desktop: '1'
+};
+var S = { cfg: {}, eps: {}, cur: null, ep: null, open: -1, done: {} };
+var BTN = [];
+var cbN = 0;
+
+function ld(k, d) { try { var v = Android.load(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
+function sv(k, v) { try { Android.save(k, JSON.stringify(v)); } catch (e) {} }
+function cfg(k) { return (S.cfg[k] != null && S.cfg[k] !== '') ? S.cfg[k] : DEF[k]; }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+function reg(t) { BTN.push(t); return BTN.length - 1; }
+
+var tT;
+function toast(m, cls) {
+  var t = document.getElementById('toast');
+  t.textContent = m; t.className = cls || ''; t.style.display = 'block';
+  clearTimeout(tT); tT = setTimeout(function () { t.style.display = 'none'; }, 2200);
+}
+
+function req(url, fn) {
+  var name = '__cb' + (++cbN);
+  window[name] = function (ok, body) { delete window[name]; fn(ok, body); };
+  Android.fetch(url + (url.indexOf('?') < 0 ? '?' : '&') + 't=' + Date.now(), name);
+}
+
+// ---------- episodios ----------
+function refresh() {
+  toast('Actualizando…');
+  var idxUrl = cfg('indexUrl');
+  req(idxUrl, function (ok, body) {
+    if (!ok) { toast('Sin conexión (' + body + '). Uso lo guardado.', 'warn'); return; }
+    var idx;
+    try { idx = JSON.parse(body); } catch (e) { toast('El índice tiene un error', 'warn'); return; }
+    var list = idx.episodios || [];
+    var base = idxUrl.replace(/[^\/]*$/, '');
+    var pending = list.length, fails = 0;
+    if (!pending) { toast('No hay episodios en el índice', 'warn'); return; }
+    list.forEach(function (e) {
+      req(/^https?:/.test(e.archivo) ? e.archivo : base + e.archivo, function (ok2, b2) {
+        if (ok2) {
+          try { var d = JSON.parse(b2); d.id = d.id || e.id; S.eps[d.id] = d; }
+          catch (er) { fails++; }
+        } else fails++;
+        if (--pending === 0) {
+          sv('eps', S.eps);
+          renderEpSelect();
+          if (!S.cur || !S.eps[S.cur]) S.cur = Object.keys(S.eps)[0];
+          var keepOpen = S.open;
+          selectEp(S.cur, keepOpen);
+          toast(fails ? ('Actualizado, con ' + fails + ' error(es)') : '✓ Prompts actualizados', fails ? 'warn' : 'ok');
+        }
+      });
+    });
+  });
+}
+
+function renderEpSelect() {
+  var sel = document.getElementById('ep');
+  var ids = Object.keys(S.eps);
+  sel.innerHTML = ids.length ? ids.map(function (id) {
+    var e = S.eps[id];
+    return '<option value="' + esc(id) + '">' + esc(e.titulo || id) + (e._importado ? ' (archivo)' : '') + '</option>';
+  }).join('') : '<option>— sin episodios —</option>';
+  if (S.cur) sel.value = S.cur;
+}
+
+function selectEp(id, keepOpen) {
+  if (!S.eps[id]) { renderList(); return; }
+  if (id !== S.cur) keepOpen = undefined;
+  S.cur = id; sv('cur', id);
+  S.ep = S.eps[id];
+  S.done = ld('done_' + id, {});
+  S.open = (keepOpen != null && keepOpen >= 0) ? keepOpen : ld('open_' + id, -1);
+  renderList();
+}
+
+// Sustituye {{CLAVE}} por la ficha del personaje o el estilo
+function expand(t) {
+  var f = (S.ep && S.ep.fichas) || {};
+  return String(t || '').replace(/\{\{\s*([\wÀ-ſ-]+)\s*\}\}/g, function (m, k) { return f[k] != null ? f[k] : m; });
+}
+
+// Divide la narración en pedazos de máximo 120 caracteres sin cortar palabras
+function split120(text, max) {
+  max = max || 120;
+  text = String(text || '').replace(/\s+/g, ' ').trim();
+  if (!text) return [];
+  var parts = [];
+  function pushPiece(p) {
+    if (p.length <= max) { parts.push(p); return; }
+    var bits = p.split(/(?<=[,;:])\s+/);
+    if (bits.length > 1) { packInto(bits); return; }
+    var words = p.split(' '), cur = '';
+    words.forEach(function (w) {
+      if ((cur ? cur + ' ' + w : w).length > max) { if (cur) parts.push(cur); cur = w; }
+      else cur = cur ? cur + ' ' + w : w;
+    });
+    if (cur) parts.push(cur);
+  }
+  function packInto(pieces) {
+    var cur = '';
+    pieces.forEach(function (s) {
+      if (s.length > max) { if (cur) { parts.push(cur); cur = ''; } pushPiece(s); return; }
+      var cand = cur ? cur + ' ' + s : s;
+      if (cand.length > max) { parts.push(cur); cur = s; } else cur = cand;
+    });
+    if (cur) parts.push(cur);
+  }
+  packInto(text.split(/(?<=[.!?¡¿…])\s+/));
+  return parts;
+}
+
+function voiceBlock(title, voz, texto) {
+  voz = voz || {};
+  var h = '<div class="voice"><div class="who">🎙 ' + esc(title) + (voz.nombre ? ' — ' + esc(voz.nombre) : '') + '</div>';
+  var vs = [voz.tipo, voz.idioma, voz.nombre].filter(Boolean);
+  if (vs.length) {
+    h += '<button class="voz w" style="background:#c2410c" onclick="cfgVoz(' + reg(JSON.stringify([voz.tipo || '', voz.idioma || '', voz.nombre || ''])) + ')">⚙ Configurar voz (todo)</button>';
+    h += '<div class="row">' + vs.map(function (v) {
+      return '<button class="voz" onclick="insSel(' + reg(v) + ')">' + esc(v.split('|')[0]) + '</button>';
+    }).join('') + '</div>';
+  }
+  split120(texto).forEach(function (c, i, arr) {
+    h += '<button class="chunk" onclick="ins(' + reg(c) + ')"><b>Parte ' + (i + 1) + '/' + arr.length + '</b> · ' + c.length + ' car.<small>' + esc(c) + '</small></button>';
+  });
+  return h + '</div>';
+}
+
+function renderList() {
+  BTN = [];
+  var L = document.getElementById('list');
+  if (!S.ep) { L.innerHTML = '<div class="empty">No hay episodios todavía.<br><br>Toca ↻ para descargarlos<br>o ⚙ para importar un archivo.</div>'; updateMini(); return; }
+  var ep = S.ep, h = '';
+  if (ep.nota) h += '<div class="empty" style="text-align:left">' + esc(ep.nota) + '</div>';
+  (ep.escenas || []).forEach(function (s, i) {
+    var n = s.n != null ? s.n : (i + 1);
+    var cls = 'scene' + (S.done[n] ? ' done' : '') + (S.open === i ? ' open' : '');
+    h += '<div class="' + cls + '" id="sc' + i + '"><div class="sh" onclick="toggle(' + i + ')"><span class="num">' + esc(n) + '</span><span class="t">' + esc(s.titulo || '') + '</span></div><div class="sb">';
+    if (s.descripcion) h += '<div class="desc">' + esc(s.descripcion) + '</div>';
+    var refs = s.referencias || [];
+    if (refs.length) h += '<div class="lab">Imagen de referencia</div><div class="refs">📎 ' + refs.map(esc).join(' + ') + '</div>';
+    if (s.camara) h += '<div class="lab">Cámara</div><div class="cam">🎥 ' + esc(s.camara) + '</div>';
+    if (s.prompt_imagen) {
+      var pi = expand(s.prompt_imagen);
+      h += '<div class="lab">Prompt de imagen · ' + pi.length + ' car.</div><button class="img w" onclick="ins(' + reg(pi) + ')">🖼 Insertar IMAGEN</button><div class="pv" onclick="this.classList.toggle(\'full\')">' + esc(pi) + '</div>';
+    }
+    if (s.prompt_video) {
+      var pv = expand(s.prompt_video);
+      h += '<div class="lab">Prompt de video · ' + pv.length + ' car.</div><button class="vid w" onclick="ins(' + reg(pv) + ')">🎬 Insertar VIDEO</button><div class="pv" onclick="this.classList.toggle(\'full\')">' + esc(pv) + '</div>';
+    }
+    if (s.narracion) h += voiceBlock('Narración', s.voz || ep.voz, s.narracion);
+    (s.dialogos || []).forEach(function (d) {
+      var vz = d.voz || (ep.voces && ep.voces[d.personaje]) || ep.voz;
+      h += voiceBlock(d.personaje || 'Diálogo', vz, d.texto);
+    });
+    if (s.notas) h += '<div class="lab">Notas</div><div class="desc">' + esc(s.notas) + '</div>';
+    h += '<div class="row" style="margin-top:10px"><button onclick="undo()">↶ Deshacer</button><button onclick="markDone(' + i + ')">' + (S.done[n] ? '↺ Desmarcar' : '✓ Hecha') + '</button></div>';
+    h += '<button class="w" onclick="nextScene()">Siguiente escena ▶</button>';
+    h += '</div></div>';
+  });
+  L.innerHTML = h;
+  updateMini();
+}
+
+function sceneNum(i) { var s = S.ep.escenas[i]; return s.n != null ? s.n : (i + 1); }
+
+function toggle(i) {
+  S.open = S.open === i ? -1 : i;
+  sv('open_' + S.cur, S.open);
+  renderList();
+  if (S.open >= 0) { var el = document.getElementById('sc' + i); if (el) el.scrollIntoView({ block: 'start' }); }
+}
+
+function markDone(i) {
+  var n = sceneNum(i);
+  if (S.done[n]) delete S.done[n]; else S.done[n] = true;
+  sv('done_' + S.cur, S.done);
+  if (S.done[n]) nextScene(); else renderList();
+}
+
+function nextScene() {
+  if (!S.ep) return;
+  var total = (S.ep.escenas || []).length;
+  if (S.open < total - 1) toggle(S.open + 1);
+  else toast('Era la última escena', 'ok');
+}
+
+function resetDone() { S.done = {}; sv('done_' + S.cur, S.done); renderList(); toast('Escenas desmarcadas'); }
+
+// ---------- insertar ----------
+function ins(i) { Android.insert(BTN[i]); }
+function insSel(i) { Android.insertSelect(BTN[i]); }
+function undo() { Android.undo(); }
+function cfgVoz(i) { var a = JSON.parse(BTN[i]); Android.configVoice(a[0], a[1], a[2]); }
+
+function quick(kind) {
+  if (!S.ep || S.open < 0) { toast('Abre primero una escena', 'warn'); return; }
+  var s = S.ep.escenas[S.open];
+  var t = kind === 'img' ? s.prompt_imagen : s.prompt_video;
+  if (!t) { toast('Esta escena no tiene ese prompt', 'warn'); return; }
+  Android.insert(expand(t));
+}
+
+window.onInsertResult = function (r) {
+  if (r === 'OK') toast('✓ Texto reemplazado', 'ok');
+  else if (r === 'NOFIELD') toast('Toca primero la casilla en VideoExpress', 'warn');
+  else if (r === 'PENDING') toast('Configurando…');
+  else if (r === 'DONE') {}
+  else if (r === 'NOUNDO') toast('No hay nada que deshacer', 'warn');
+  else toast('La página aún no está lista, intenta otra vez', 'warn');
+};
+
+window.onReport = function (m) {
+  var p = m.indexOf(':'), k = m.slice(0, p), v = m.slice(p + 1);
+  if (k === 'SEL_OK') toast('✓ Seleccionado: ' + v, 'ok');
+  else if (k === 'SEL_NONE') toast('Escribí "' + v + '". Toca la opción en la lista.', 'warn');
+  else if (k === 'VOZ_OK') toast('✓ Voz lista: ' + v + '. Ahora inserta el texto.', 'ok');
+  else if (k === 'VOZ_FAIL') toast('No encontré "' + v + '". Hazlo a mano o usa los botones de abajo.', 'warn');
+};
+
+// ---------- panel ----------
+function collapse(c) {
+  document.body.classList.toggle('col', c);
+  Android.setCollapsed(c);
+}
+
+function updateMini() {
+  document.getElementById('miniN').textContent = (S.ep && S.open >= 0) ? sceneNum(S.open) : '–';
+}
+
+function toggleCfg() {
+  var on = !document.body.classList.contains('cfg');
+  document.body.classList.toggle('cfg', on);
+  if (on) {
+    document.getElementById('cVe').value = cfg('veUrl');
+    document.getElementById('cW').value = cfg('width');
+    document.getElementById('cD').value = cfg('desktop');
+    document.getElementById('cIdx').value = cfg('indexUrl');
+  }
+}
+
+function saveCfg() {
+  S.cfg.veUrl = document.getElementById('cVe').value.trim();
+  S.cfg.width = document.getElementById('cW').value;
+  S.cfg.desktop = document.getElementById('cD').value;
+  S.cfg.indexUrl = document.getElementById('cIdx').value.trim();
+  sv('cfg', S.cfg);
+  Android.applyConfig();
+  toast('✓ Ajustes guardados', 'ok');
+  toggleCfg();
+}
+
+function openVe() {
+  var u = document.getElementById('cVe').value.trim();
+  if (u && !/^https?:\/\//.test(u)) u = 'https://' + u;
+  if (u) { S.cfg.veUrl = u; sv('cfg', S.cfg); Android.openVe(u); }
+}
+
+function importFile(inp) {
+  var f = inp.files && inp.files[0];
+  if (!f) return;
+  var r = new FileReader();
+  r.onload = function () {
+    try {
+      var d = JSON.parse(r.result);
+      if (!d.escenas) throw 0;
+      d.id = d.id || ('archivo-' + Date.now());
+      d._importado = true;
+      S.eps[d.id] = d; sv('eps', S.eps);
+      renderEpSelect(); selectEp(d.id);
+      document.body.classList.remove('cfg');
+      toast('✓ Episodio importado', 'ok');
+    } catch (e) { toast('Ese archivo no es un episodio válido', 'warn'); }
+    inp.value = '';
+  };
+  r.readAsText(f, 'utf-8');
+}
+
+// ---------- inicio ----------
+(function init() {
+  S.cfg = ld('cfg', {}) || {};
+  S.eps = ld('eps', {}) || {};
+  S.cur = ld('cur', null);
+  var c = false; try { c = Android.isCollapsed(); } catch (e) {}
+  document.body.classList.toggle('col', !!c);
+  renderEpSelect();
+  if (S.cur && S.eps[S.cur]) selectEp(S.cur);
+  else { if (Object.keys(S.eps).length) selectEp(Object.keys(S.eps)[0]); else renderList(); }
+  refresh();
+})();
+</script>
+</body>
+</html>
