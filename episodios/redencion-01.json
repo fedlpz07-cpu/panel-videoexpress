@@ -24,7 +24,10 @@
       "camara": "Vista aérea que desciende lentamente (crane down) hacia el trono",
       "prompt_imagen": "SCENE E01-01. Wide aerial establishing shot of heaven. {{CIELO}} In the far distance, a throne radiating overwhelming light. {{ESTILO}}",
       "prompt_video": "SCENE E01-01. Duration 6 seconds, landscape 16:9. SILENT. Slow cinematic crane-down aerial shot descending through golden clouds over the heavenly city toward a distant throne of light. Gentle light rays sweep across the crystal sea. No characters visible close up. {{ESTILO}}",
-      "narracion": "Antes de que el mundo existiera, antes de que los ángeles fueran creados, había gloria en el cielo."
+      "narracion": "Antes de que el mundo existiera, antes de que los ángeles fueran creados, había gloria en el cielo.",
+      "ajustes": {
+        "personaje_consistente": false
+      }
     },
     {
       "n": 2,
@@ -63,5 +66,14 @@
       "prompt_video": "SCENE E01-04. Duration 6 seconds, landscape 16:9. SILENT. Slow push-in on Lucifer's face. {{LUCIFER}} Around him the other angels bow, but he remains half-standing; the light on his face dims slightly as a shadow of pride appears. {{ESTILO}}",
       "narracion": "Pero entre ellos había uno, el más exaltado de todos los ángeles, Lucifer, el querubín cubridor. Poco a poco comenzó a desear para sí la honra que solo pertenecía al Hijo."
     }
-  ]
+  ],
+  "ajustes": {
+    "tipo_imagen": "Photorealistic",
+    "modo_creativo": true,
+    "mejorar_prompt": false,
+    "personaje_consistente": true,
+    "narracion": true,
+    "solo_video": true,
+    "duracion": 6
+  }
 }

@@ -126,32 +126,90 @@
   // "Spanish|Español" = acepta cualquiera de las dos palabras
   function alts(text) { return String(text).split('|').map(norm).filter(Boolean); }
 
-  // Cambia una lista normal (<select>) visible que tenga una opción con ese texto
-  function selectByOption(text) {
+  // Una lista cuenta si se ve, o si está escondida dentro de un buscador visible
+  // (VideoExpress envuelve la lista de voces con el plugin "searchableSelect").
+  function selectUsable(s) {
+    if (s.disabled) return false;
+    if (visible(s)) return true;
+    var w = s.closest('.searchable-select, [class*=searchable]') || s.parentElement;
+    return !!(w && visible(w));
+  }
+
+  // Cambia una lista de forma que VideoExpress (jQuery) se entere del cambio
+  function setSelect(s, value) {
+    var win = s.ownerDocument.defaultView || window;
+    var jq = win.jQuery;
+    if (jq) {
+      var $s = jq(s);
+      $s.val(value).trigger('change');
+      var ss = $s.data('searchableSelect');
+      if (ss) { try { if (ss.syncSelectedValue) ss.syncSelectedValue(); else if (ss.refresh) ss.refresh(); } catch (e) {} }
+    } else {
+      var desc = Object.getOwnPropertyDescriptor(win.HTMLSelectElement.prototype, 'value');
+      if (desc && desc.set) desc.set.call(s, value); else s.value = value;
+      s.dispatchEvent(new Event('input', { bubbles: true }));
+      s.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    var shown = visible(s) ? s : (s.parentElement || s);
+    flash(shown);
+  }
+
+  // Busca entre las listas usables una opción con ese texto (exacta primero)
+  function selectByOption(text, onlySel) {
     var want = alts(text), docs = allDocs();
     for (var pass = 0; pass < 2; pass++) {
       for (var d = 0; d < docs.length; d++) {
-        var sels = docs[d].querySelectorAll('select');
+        var sels = onlySel ? [onlySel] : docs[d].querySelectorAll('select');
         for (var i = 0; i < sels.length; i++) {
           var s = sels[i];
-          if (!visible(s) || s.disabled) continue;
+          if (!s || !selectUsable(s)) continue;
           for (var j = 0; j < s.options.length; j++) {
             var o = norm(s.options[j].text);
             var hit = want.some(function (w) { return pass === 0 ? o === w : o.indexOf(w) === 0; });
             if (hit) {
-              var win = s.ownerDocument.defaultView || window;
-              var desc = Object.getOwnPropertyDescriptor(win.HTMLSelectElement.prototype, 'value');
-              if (desc && desc.set) desc.set.call(s, s.options[j].value); else s.selectedIndex = j;
-              s.dispatchEvent(new Event('input', { bubbles: true }));
-              s.dispatchEvent(new Event('change', { bubbles: true }));
-              flash(s);
+              if (s.value !== s.options[j].value) setSelect(s, s.options[j].value);
+              else flash(visible(s) ? s : s.parentElement);
               return s.options[j].text;
             }
           }
         }
+        if (onlySel) break;
       }
     }
     return null;
+  }
+
+  function firstUsable(selectors) {
+    for (var i = 0; i < selectors.length; i++) {
+      var docs = allDocs();
+      for (var d = 0; d < docs.length; d++) {
+        var list = docs[d].querySelectorAll(selectors[i]);
+        for (var k = 0; k < list.length; k++) {
+          var el = list[k];
+          if (el.tagName === 'SELECT' ? selectUsable(el) : (visible(el) && !el.disabled)) return el;
+        }
+      }
+    }
+    return null;
+  }
+
+  // Casillas conocidas de VideoExpress 3.5 (vistas al inspeccionar la página)
+  var FIELDS = {
+    img: ['#opt_prompt', 'textarea[name="prompt"]'],
+    vid: ['#opt_video_prompt', 'textarea[name="video_prompt"]'],
+    voz: ['textarea[name="tts_voice_clone_text"]', 'textarea[name="text"]']
+  };
+  var VOICE = {
+    tipo: ['#tts_voice_category', 'select[name="category"]'],
+    idioma: ['#tts_voice_clone_lang', 'select[name="voice_lang"]'],
+    nombre: ['#tts_voice_clone_voice', 'select[name="voice"]']
+  };
+
+  function setCheck(name, on) {
+    var el = firstUsable(['input[name="' + name + '"]']);
+    if (!el) return false;
+    if (!!el.checked !== !!on) el.click();
+    return true;
   }
 
   // Casilla de búsqueda visible (ej. "Search language..." de la voz)
@@ -188,14 +246,32 @@
     })();
   }
 
+  // Espera hasta que una lista tenga la opción (VideoExpress las llena por internet)
+  function waitSelect(selectors, text, done, tries) {
+    tries = tries || 0;
+    var s = firstUsable(selectors);
+    var got = s ? selectByOption(text, s) : null;
+    if (got) { done(got); return; }
+    if (tries < 25) setTimeout(function () { waitSelect(selectors, text, done, tries + 1); }, 400);
+    else done(null);
+  }
+
+  function fillEl(el, text) {
+    undoStack.push({ el: el, val: getVal(el) });
+    if (undoStack.length > 30) undoStack.shift();
+    setVal(el, text, false);
+    flash(el);
+    try { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); } catch (e) {}
+  }
+
   window.__pve = {
-    insert: function (text) {
-      var el = target();
+    // kind: 'img' | 'vid' | 'voz' | '' (cualquier casilla tocada)
+    insert: function (text, kind) {
+      var el = null;
+      if (kind && FIELDS[kind]) el = firstUsable(FIELDS[kind]);
+      if (!el) el = target();
       if (!el) return 'NOFIELD';
-      undoStack.push({ el: el, val: getVal(el) });
-      if (undoStack.length > 30) undoStack.shift();
-      setVal(el, text, false);
-      flash(el);
+      fillEl(el, text);
       return 'OK';
     },
     undo: function () {
@@ -205,50 +281,64 @@
       flash(u.el);
       return 'OK';
     },
-    // Un botón de voz: primero intenta las listas normales (Category, Language);
-    // si no, escribe en la casilla de búsqueda y toca la opción.
+    // Un solo valor de voz (tipo, idioma o nombre)
     insertSelect: function (text) {
       var got = selectByOption(text);
       if (got) { report('SEL_OK:' + got); return 'DONE'; }
       var el = target();
-      if (!el || (el.tagName === 'TEXTAREA')) el = searchBox();
+      if (!el || el.tagName === 'TEXTAREA') el = searchBox();
       if (!el) return 'NOFIELD';
       typeAndPick(el, text, function (ok) { report((ok ? 'SEL_OK:' : 'SEL_NONE:') + text.split('|')[0]); });
       return 'PENDING';
     },
-
-    // Todo de una vez: tipo de voz → idioma → voz
+    // Todo de una vez: Category → Language → Voice, esperando que cada lista cargue
     configVoice: function (tipo, idioma, nombre) {
+      if (!firstUsable(VOICE.tipo) && !firstUsable(VOICE.idioma)) return 'NOVOICE';
       var steps = [];
-      if (tipo) steps.push(['sel', tipo]);
-      if (idioma) steps.push(['sel', idioma]);
-      if (nombre) steps.push(['voz', nombre]);
+      if (tipo) steps.push(['tipo', tipo]);
+      if (idioma) steps.push(['idioma', idioma]);
+      if (nombre) steps.push(['nombre', nombre]);
       var i = 0;
       (function next() {
-        if (i >= steps.length) { report('VOZ_OK:' + (nombre || '').split('|')[0]); return; }
-        var st = steps[i++];
-        if (st[0] === 'sel') {
-          var tries = 0;
-          (function trySel() {
-            tries++;
-            var got = selectByOption(st[1]);
-            if (got) setTimeout(next, 900);
-            else if (tries < 8) setTimeout(trySel, 400);
-            else report('VOZ_FAIL:' + st[1].split('|')[0]);
-          })();
-        } else {
-          var tries2 = 0;
-          (function tryBox() {
-            tries2++;
-            var box = searchBox();
-            if (box) typeAndPick(box, st[1], function (ok) {
-              report(ok ? 'VOZ_OK:' + st[1].split('|')[0] : 'VOZ_FAIL:' + st[1].split('|')[0]);
-            });
-            else if (tries2 < 8) setTimeout(tryBox, 400);
-            else report('VOZ_FAIL:' + st[1].split('|')[0]);
-          })();
+        if (i >= steps.length) {
+          var t = firstUsable(FIELDS.voz);
+          if (t) { try { t.scrollIntoView({ block: 'center' }); } catch (e) {} flash(t); }
+          report('VOZ_OK:' + String(nombre || '').split('|')[0]);
+          return;
         }
+        var st = steps[i++];
+        waitSelect(VOICE[st[0]], st[1], function (got) {
+          if (got) setTimeout(next, 500);
+          else report('VOZ_FAIL:' + st[1].split('|')[0]);
+        });
       })();
+      return 'PENDING';
+    },
+    // Ajustes de la ventana "Create Video From Prompt"
+    applySettings: function (a) {
+      if (!firstUsable(FIELDS.img)) return 'NOFORM';
+      var done = [];
+      if (a.tipo_imagen) { var ti = /image type/i.test(a.tipo_imagen) ? a.tipo_imagen : 'Image Type: ' + a.tipo_imagen; var g = selectByOption(ti, firstUsable(['select[name="select-type"]'])); if (g) done.push(g.replace('Image Type: ', '')); }
+      var map = { modo_creativo: 'image_creative_mode', mejorar_prompt: 'auto_enhance_prompt', personaje_consistente: 'use_consistent_character', lipsync: 'talking_video', narracion: 'narration_video', galeria_publica: 'shared', modo_avanzado: 'advanced_mode' };
+      var needAdv = a.solo_video != null || a.duracion != null || a.mejorar_prompt_video != null;
+      if (needAdv && a.modo_avanzado == null) a.modo_avanzado = true;
+      Object.keys(map).forEach(function (k) { if (a[k] != null && setCheck(map[k], a[k])) done.push(k); });
+      setTimeout(function () {
+        if (a.mejorar_prompt_video != null && setCheck('enhance_video_prompt', a.mejorar_prompt_video)) done.push('mejorar_prompt_video');
+        if (a.solo_video != null && setCheck('video_only', a.solo_video)) done.push('solo_video');
+        if (a.duracion != null) {
+          setCheck('manual_video_length', true);
+          var r = firstUsable(['#opt_video_duration', 'input[name="video_duration"]']);
+          if (r) {
+            var win = r.ownerDocument.defaultView || window;
+            if (win.jQuery) win.jQuery(r).val(a.duracion).trigger('input').trigger('change');
+            else { r.value = a.duracion; r.dispatchEvent(new Event('input', { bubbles: true })); r.dispatchEvent(new Event('change', { bubbles: true })); }
+            flash(r.parentElement || r);
+            done.push(a.duracion + ' s');
+          }
+        }
+        report('AJ_OK:' + done.length);
+      }, 700);
       return 'PENDING';
     }
   };

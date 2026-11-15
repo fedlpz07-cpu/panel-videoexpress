@@ -197,7 +197,17 @@ public class MainActivity extends Activity {
     class PanelBridge {
         @JavascriptInterface
         public void insert(String text) {
-            runVe("window.__pve.insert(" + JSONObject.quote(text) + ")");
+            runVe("window.__pve.insert(" + JSONObject.quote(text) + ",'')");
+        }
+
+        @JavascriptInterface
+        public void insertKind(String text, String kind) {
+            runVe("window.__pve.insert(" + JSONObject.quote(text) + "," + JSONObject.quote(kind) + ")");
+        }
+
+        @JavascriptInterface
+        public void applySettings(String json) {
+            runVe("window.__pve.applySettings(" + json + ")");
         }
 
         @JavascriptInterface

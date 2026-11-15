@@ -34,6 +34,11 @@ select,input[type=text]{width:100%;background:#2a2f3a;color:var(--tx);border:0;b
 .img{background:var(--ac)}
 .vid{background:#0e7490}
 .voz{background:#92400e;font-size:12px}
+.aj{background:#4338ca}
+.chips{display:flex;flex-wrap:wrap;gap:4px}
+.chip{font-size:11px;padding:2px 7px;border-radius:10px;background:#2a2f3a}
+.chip.on{background:#1e3a2f;color:#86efac}
+.chip.off{background:#3a1e1e;color:#fca5a5;text-decoration:line-through}
 .chunk{background:#3f3f46;text-align:left;width:100%;margin-top:4px;font-weight:500}
 .chunk b{color:#fbbf24}
 .chunk small{display:block;color:var(--mu);font-weight:400;margin-top:2px}
@@ -215,13 +220,13 @@ function voiceBlock(title, voz, texto) {
   var h = '<div class="voice"><div class="who">🎙 ' + esc(title) + (voz.nombre ? ' — ' + esc(voz.nombre) : '') + '</div>';
   var vs = [voz.tipo, voz.idioma, voz.nombre].filter(Boolean);
   if (vs.length) {
-    h += '<button class="voz w" style="background:#c2410c" onclick="cfgVoz(' + reg(JSON.stringify([voz.tipo || '', voz.idioma || '', voz.nombre || ''])) + ')">⚙ Configurar voz (todo)</button>';
+    h += '<button class="voz w" style="background:#c2410c" onclick="cfgVoz(' + reg(JSON.stringify([voz.tipo || '', voz.idioma || '', voz.nombre || ''])) + ')">🎙 Configurar voz automáticamente</button>';
     h += '<div class="row">' + vs.map(function (v) {
       return '<button class="voz" onclick="insSel(' + reg(v) + ')">' + esc(v.split('|')[0]) + '</button>';
     }).join('') + '</div>';
   }
   split120(texto).forEach(function (c, i, arr) {
-    h += '<button class="chunk" onclick="ins(' + reg(c) + ')"><b>Parte ' + (i + 1) + '/' + arr.length + '</b> · ' + c.length + ' car.<small>' + esc(c) + '</small></button>';
+    h += '<button class="chunk" onclick="ins(' + reg(c) + ',\'voz\')"><b>Parte ' + (i + 1) + '/' + arr.length + '</b> · ' + c.length + ' car.<small>' + esc(c) + '</small></button>';
   });
   return h + '</div>';
 }
@@ -240,13 +245,17 @@ function renderList() {
     var refs = s.referencias || [];
     if (refs.length) h += '<div class="lab">Imagen de referencia</div><div class="refs">📎 ' + refs.map(esc).join(' + ') + '</div>';
     if (s.camara) h += '<div class="lab">Cámara</div><div class="cam">🎥 ' + esc(s.camara) + '</div>';
+    var aj = Object.assign({}, ep.ajustes || {}, s.ajustes || {});
+    if (Object.keys(aj).length) {
+      h += '<div class="lab">Ajustes de generación</div><div class="chips">' + ajusteChips(aj) + '</div><button class="aj w" onclick="applyAj(' + reg(JSON.stringify(aj)) + ')">⚙ Aplicar ajustes de la escena</button>';
+    }
     if (s.prompt_imagen) {
       var pi = expand(s.prompt_imagen);
-      h += '<div class="lab">Prompt de imagen · ' + pi.length + ' car.</div><button class="img w" onclick="ins(' + reg(pi) + ')">🖼 Insertar IMAGEN</button><div class="pv" onclick="this.classList.toggle(\'full\')">' + esc(pi) + '</div>';
+      h += '<div class="lab">Prompt de imagen · ' + pi.length + ' car.</div><button class="img w" onclick="ins(' + reg(pi) + ',\'img\')">🖼 Insertar prompt de imagen</button><div class="pv" onclick="this.classList.toggle(\'full\')">' + esc(pi) + '</div>';
     }
     if (s.prompt_video) {
       var pv = expand(s.prompt_video);
-      h += '<div class="lab">Prompt de video · ' + pv.length + ' car.</div><button class="vid w" onclick="ins(' + reg(pv) + ')">🎬 Insertar VIDEO</button><div class="pv" onclick="this.classList.toggle(\'full\')">' + esc(pv) + '</div>';
+      h += '<div class="lab">Prompt de video · ' + pv.length + ' car.</div><button class="vid w" onclick="ins(' + reg(pv) + ',\'vid\')">🎬 Insertar prompt de video</button><div class="pv" onclick="this.classList.toggle(\'full\')">' + esc(pv) + '</div>';
     }
     if (s.narracion) h += voiceBlock('Narración', s.voz || ep.voz, s.narracion);
     (s.dialogos || []).forEach(function (d) {
@@ -288,7 +297,17 @@ function nextScene() {
 function resetDone() { S.done = {}; sv('done_' + S.cur, S.done); renderList(); toast('Escenas desmarcadas'); }
 
 // ---------- insertar ----------
-function ins(i) { Android.insert(BTN[i]); }
+function ins(i, kind) { Android.insertKind(BTN[i], kind || ''); }
+function applyAj(i) { Android.applySettings(BTN[i]); }
+function ajusteChips(a) {
+  var L = { tipo_imagen: 'Tipo', modo_creativo: 'Modo creativo', mejorar_prompt: 'Mejorar prompt', personaje_consistente: 'Personaje consistente', lipsync: 'Lipsync HD', narracion: 'Narración', solo_video: 'Solo video', duracion: 'Duración', modo_avanzado: 'Avanzado', galeria_publica: 'Galería pública', mejorar_prompt_video: 'Mejorar prompt de video' };
+  return Object.keys(a).map(function (k) {
+    var v = a[k], t = L[k] || k;
+    if (v === true) return '<span class="chip on">' + esc(t) + '</span>';
+    if (v === false) return '<span class="chip off">' + esc(t) + '</span>';
+    return '<span class="chip on">' + esc(t) + ': ' + esc(k === 'duracion' ? v + ' s' : v) + '</span>';
+  }).join('');
+}
 function insSel(i) { Android.insertSelect(BTN[i]); }
 function undo() { Android.undo(); }
 function cfgVoz(i) { var a = JSON.parse(BTN[i]); Android.configVoice(a[0], a[1], a[2]); }
@@ -298,12 +317,14 @@ function quick(kind) {
   var s = S.ep.escenas[S.open];
   var t = kind === 'img' ? s.prompt_imagen : s.prompt_video;
   if (!t) { toast('Esta escena no tiene ese prompt', 'warn'); return; }
-  Android.insert(expand(t));
+  Android.insertKind(expand(t), kind);
 }
 
 window.onInsertResult = function (r) {
   if (r === 'OK') toast('✓ Texto reemplazado', 'ok');
-  else if (r === 'NOFIELD') toast('Toca primero la casilla en VideoExpress', 'warn');
+  else if (r === 'NOFIELD') toast('No encuentro la casilla. Abre la ventana en VideoExpress o toca la casilla.', 'warn');
+  else if (r === 'NOVOICE') toast('Abre primero la ventana de narración (pestaña CloneVoice.ai)', 'warn');
+  else if (r === 'NOFORM') toast('Abre primero "Create Video From Prompt"', 'warn');
   else if (r === 'PENDING') toast('Configurando…');
   else if (r === 'DONE') {}
   else if (r === 'NOUNDO') toast('No hay nada que deshacer', 'warn');
@@ -314,6 +335,7 @@ window.onReport = function (m) {
   var p = m.indexOf(':'), k = m.slice(0, p), v = m.slice(p + 1);
   if (k === 'SEL_OK') toast('✓ Seleccionado: ' + v, 'ok');
   else if (k === 'SEL_NONE') toast('Escribí "' + v + '". Toca la opción en la lista.', 'warn');
+  else if (k === 'AJ_OK') toast('✓ Ajustes aplicados', 'ok');
   else if (k === 'VOZ_OK') toast('✓ Voz lista: ' + v + '. Ahora inserta el texto.', 'ok');
   else if (k === 'VOZ_FAIL') toast('No encontré "' + v + '". Hazlo a mano o usa los botones de abajo.', 'warn');
 };
