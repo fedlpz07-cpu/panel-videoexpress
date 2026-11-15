@@ -206,6 +206,11 @@ public class MainActivity extends Activity {
         }
 
         @JavascriptInterface
+        public void clickAction(String action) {
+            runVe("window.__pve.click(" + JSONObject.quote(action) + ")");
+        }
+
+        @JavascriptInterface
         public void applySettings(String json) {
             runVe("window.__pve.applySettings(" + json + ")");
         }

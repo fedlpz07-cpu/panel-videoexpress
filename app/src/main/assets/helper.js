@@ -61,6 +61,7 @@
     if (desc && desc.set) desc.set.call(el, text); else el.value = text;
     el.dispatchEvent(new Event('input', { bubbles: true }));
     el.dispatchEvent(new Event('change', { bubbles: true }));
+    el.dispatchEvent(new KeyboardEvent('keyup', { bubbles: true }));
   }
 
   function flash(el) {
@@ -131,8 +132,12 @@
   function selectUsable(s) {
     if (s.disabled) return false;
     if (visible(s)) return true;
-    var w = s.closest('.searchable-select, [class*=searchable]') || s.parentElement;
-    return !!(w && visible(w));
+    var p = s.parentElement;
+    if (!p) return false;
+    if (visible(p)) return true;
+    var sib = p.querySelectorAll('input, button, div');
+    for (var i = 0; i < sib.length; i++) if (visible(sib[i])) return true;
+    return false;
   }
 
   // Cambia una lista de forma que VideoExpress (jQuery) se entere del cambio
@@ -200,10 +205,28 @@
     voz: ['textarea[name="tts_voice_clone_text"]', 'textarea[name="text"]']
   };
   var VOICE = {
-    tipo: ['#tts_voice_category', 'select[name="category"]'],
-    idioma: ['#tts_voice_clone_lang', 'select[name="voice_lang"]'],
-    nombre: ['#tts_voice_clone_voice', 'select[name="voice"]']
+    tipo: ['select#tts_voice_category', 'select[name="category"]'],
+    idioma: ['select#tts_voice_clone_lang--native', 'select[name="voice_lang"]', 'select#tts_voice_clone_lang'],
+    nombre: ['select#tts_voice_clone_voice--native', 'select[name="voice"]', 'select#tts_voice_clone_voice']
   };
+  // Botones de VideoExpress 3.5
+  var ACTIONS = {
+    crear_imagen: ['.button-generate-image-submit'],
+    crear_video: ['.button-generate-talking-video', '.button-generate-video', 'button[class*="button-generate-vi"]'],
+    generar_audio: ['.tts_voice_button_import'],
+    crear_narracion: ['.bbm-modal .button-submit']
+  };
+
+  function openCloneVoiceTab() {
+    var docs = allDocs();
+    for (var d = 0; d < docs.length; d++) {
+      var tabs = docs[d].querySelectorAll('a[data-toggle="tab"], a[data-bs-toggle="tab"], [role="tab"]');
+      for (var i = 0; i < tabs.length; i++) {
+        if (norm(tabs[i].textContent) === 'clonevoice.ai' && visible(tabs[i])) { tabs[i].click(); return true; }
+      }
+    }
+    return false;
+  }
 
   function setCheck(name, on) {
     var el = firstUsable(['input[name="' + name + '"]']);
@@ -293,7 +316,7 @@
     },
     // Todo de una vez: Category → Language → Voice, esperando que cada lista cargue
     configVoice: function (tipo, idioma, nombre) {
-      if (!firstUsable(VOICE.tipo) && !firstUsable(VOICE.idioma)) return 'NOVOICE';
+      if (!firstUsable(VOICE.tipo)) openCloneVoiceTab();
       var steps = [];
       if (tipo) steps.push(['tipo', tipo]);
       if (idioma) steps.push(['idioma', idioma]);
@@ -302,6 +325,7 @@
       (function next() {
         if (i >= steps.length) {
           var t = firstUsable(FIELDS.voz);
+          if (t) { try { t.focus(); } catch (e) {} }
           if (t) { try { t.scrollIntoView({ block: 'center' }); } catch (e) {} flash(t); }
           report('VOZ_OK:' + String(nombre || '').split('|')[0]);
           return;
@@ -309,10 +333,19 @@
         var st = steps[i++];
         waitSelect(VOICE[st[0]], st[1], function (got) {
           if (got) setTimeout(next, 500);
-          else report('VOZ_FAIL:' + st[1].split('|')[0]);
+          else report(firstUsable(VOICE.tipo) ? 'VOZ_FAIL:' + st[1].split('|')[0] : 'NOVOICE:');
         });
       })();
       return 'PENDING';
+    },
+    // Toca un botón de VideoExpress (crear imagen, audio, video…)
+    click: function (action) {
+      var b = firstUsable(ACTIONS[action] || []);
+      if (!b) return 'NOBTN';
+      if (b.disabled || b.classList.contains('disabled')) return 'BTNOFF';
+      flash(b);
+      b.click();
+      return 'CLICKED';
     },
     // Ajustes de la ventana "Create Video From Prompt"
     applySettings: function (a) {

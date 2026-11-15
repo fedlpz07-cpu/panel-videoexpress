@@ -35,6 +35,7 @@ select,input[type=text]{width:100%;background:#2a2f3a;color:var(--tx);border:0;b
 .vid{background:#0e7490}
 .voz{background:#92400e;font-size:12px}
 .aj{background:#4338ca}
+.act{background:#be123c;font-size:12px}
 .chips{display:flex;flex-wrap:wrap;gap:4px}
 .chip{font-size:11px;padding:2px 7px;border-radius:10px;background:#2a2f3a}
 .chip.on{background:#1e3a2f;color:#86efac}
@@ -228,8 +229,10 @@ function voiceBlock(title, voz, texto) {
   split120(texto).forEach(function (c, i, arr) {
     h += '<button class="chunk" onclick="ins(' + reg(c) + ',\'voz\')"><b>Parte ' + (i + 1) + '/' + arr.length + '</b> · ' + c.length + ' car.<small>' + esc(c) + '</small></button>';
   });
+  h += '<div class="row"><button class="act" onclick="act(\'generar_audio\')">▶ Import Speech</button><button class="act" onclick="act(\'crear_narracion\')">▶ Create Narration Video</button></div>';
   return h + '</div>';
 }
+function act(a) { Android.clickAction(a); }
 
 function renderList() {
   BTN = [];
@@ -256,6 +259,9 @@ function renderList() {
     if (s.prompt_video) {
       var pv = expand(s.prompt_video);
       h += '<div class="lab">Prompt de video · ' + pv.length + ' car.</div><button class="vid w" onclick="ins(' + reg(pv) + ',\'vid\')">🎬 Insertar prompt de video</button><div class="pv" onclick="this.classList.toggle(\'full\')">' + esc(pv) + '</div>';
+    }
+    if (s.prompt_imagen || s.prompt_video) {
+      h += '<div class="row"><button class="act" onclick="act(\'crear_imagen\')">▶ Create Image</button><button class="act" onclick="act(\'crear_video\')">▶ Create Video</button></div>';
     }
     if (s.narracion) h += voiceBlock('Narración', s.voz || ep.voz, s.narracion);
     (s.dialogos || []).forEach(function (d) {
@@ -323,6 +329,9 @@ function quick(kind) {
 window.onInsertResult = function (r) {
   if (r === 'OK') toast('✓ Texto reemplazado', 'ok');
   else if (r === 'NOFIELD') toast('No encuentro la casilla. Abre la ventana en VideoExpress o toca la casilla.', 'warn');
+  else if (r === 'CLICKED') toast('✓ Botón presionado en VideoExpress', 'ok');
+  else if (r === 'NOBTN') toast('No veo ese botón. Abre la ventana correspondiente en VideoExpress.', 'warn');
+  else if (r === 'BTNOFF') toast('Ese botón aún está desactivado (¿falta crear la imagen?)', 'warn');
   else if (r === 'NOVOICE') toast('Abre primero la ventana de narración (pestaña CloneVoice.ai)', 'warn');
   else if (r === 'NOFORM') toast('Abre primero "Create Video From Prompt"', 'warn');
   else if (r === 'PENDING') toast('Configurando…');
@@ -335,6 +344,7 @@ window.onReport = function (m) {
   var p = m.indexOf(':'), k = m.slice(0, p), v = m.slice(p + 1);
   if (k === 'SEL_OK') toast('✓ Seleccionado: ' + v, 'ok');
   else if (k === 'SEL_NONE') toast('Escribí "' + v + '". Toca la opción en la lista.', 'warn');
+  else if (k === 'NOVOICE') toast('Abre primero la ventana de narración (Create Video con Narration)', 'warn');
   else if (k === 'AJ_OK') toast('✓ Ajustes aplicados', 'ok');
   else if (k === 'VOZ_OK') toast('✓ Voz lista: ' + v + '. Ahora inserta el texto.', 'ok');
   else if (k === 'VOZ_FAIL') toast('No encontré "' + v + '". Hazlo a mano o usa los botones de abajo.', 'warn');
